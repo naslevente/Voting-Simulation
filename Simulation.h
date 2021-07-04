@@ -30,6 +30,10 @@ class Simulation {
             this->numCandidates = numCandidates;
             this->numVoters = numVoters;
 
+            numberOfManipulations = 0;
+            numberOfSuccesses = 0;
+            minoritySuccesses = 0;
+
             simulationBallots = std::vector<std::shared_ptr<Ballot>>(numVoters);
 
             // create the instance of graphController
@@ -37,6 +41,12 @@ class Simulation {
         }
 
         ~Simulation() = default;
+
+        // getters and setters
+        int getNumberOfManipulations() {
+
+            return this->numberOfManipulations;
+        }
 
         // !! negy kulonbozo eljaras !!
 
@@ -54,7 +64,7 @@ class Simulation {
             Manipulation(std::get<0>(winningCandidates), std::get<1>(winningCandidates));
 
             // clear the count array
-            igenNemCount.clear();
+            igenNemCount = std::vector<int>(numCandidates, 0);
         }
 
         void StartSchulzeSimulation() {
@@ -65,7 +75,7 @@ class Simulation {
             // calculate strongest paths
             auto finalRank = FindWinningSchulzeCandidates();
 
-            if(finalRank.at(0) != -1 && finalRank.at(1) != -1) {
+            if(finalRank.at(0) != -1 || finalRank.at(1) != -1) {
 
                 numberOfSuccesses += 1;
             }
@@ -206,7 +216,7 @@ class Simulation {
                 // refer to wikipedia table with strong paths
                 // count the number of wins a certain row number has over its column associates
                 // that number minus the number of candidates gives the ranking for that row candidate
-                finalRank.at(4 - numGreater) = i;
+                finalRank.at((numCandidates - 1) - numGreater) = i;
             }
 
             return finalRank;

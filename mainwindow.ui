@@ -220,7 +220,7 @@
      <string>Analysis:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="probability_label">
     <property name="geometry">
      <rect>
       <x>330</x>
@@ -238,7 +238,7 @@
      <string>Probabaility of</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_2">
+   <widget class="QLabel" name="manipulation_label">
     <property name="geometry">
      <rect>
       <x>330</x>
@@ -256,7 +256,7 @@
      <string>manipulations</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="probability_2_label">
     <property name="geometry">
      <rect>
       <x>480</x>
@@ -274,7 +274,7 @@
      <string>Probabaility of</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_4">
+   <widget class="QLabel" name="probability_3_label">
     <property name="geometry">
      <rect>
       <x>630</x>
@@ -292,7 +292,7 @@
      <string>Probabaility of</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_5">
+   <widget class="QLabel" name="success_label">
     <property name="geometry">
      <rect>
       <x>480</x>
@@ -310,7 +310,7 @@
      <string>success</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_6">
+   <widget class="QLabel" name="minority_success_label">
     <property name="geometry">
      <rect>
       <x>630</x>
@@ -326,6 +326,19 @@
     </property>
     <property name="text">
      <string>minority success</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="iteration_label">
+    <property name="geometry">
+     <rect>
+      <x>596</x>
+      <y>10</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Iteration Counter:</string>
     </property>
    </widget>
   </widget>

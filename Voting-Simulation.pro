@@ -17,7 +17,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    simulationworker.cpp
 
 HEADERS += \
     Ballot.h \
@@ -25,7 +26,8 @@ HEADERS += \
     GraphController.h \
     Simulation.h \
     WeightedLink.h \
-    mainwindow.h
+    mainwindow.h \
+    simulationworker.h
 
 FORMS += \
     mainwindow.ui

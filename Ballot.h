@@ -41,13 +41,6 @@ class Ballot {
                     ballot.at(randomIndex) = 0;
                 }
             }
-
-            for(int i = 0; i < ballot.size(); ++i) {
-
-                std::cout << ballot.at(i) << " ";
-            }
-
-            std::cout << std::endl;
         }
 
         int getRank(int candidate) {
