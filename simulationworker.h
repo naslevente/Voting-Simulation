@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QObject>
 #include <QWidget>
+#include <QTableWidget>
 #include "Simulation.h"
 
 class SimulationWorker : public QObject
@@ -17,6 +18,16 @@ public:
 
     // boolean value that works with the stop button
     bool isRunning = true;
+
+    // number of voters and number of candidates fields
+    int numVoters;
+    int numCandidates;
+
+    // iteration counter for iteration label
+    int iterations = 0;
+
+    // returns 2d array containing the probabilities
+    std::vector<std::vector<double>> getProbabilities();
 
 public slots:
     // main method that initiates simulating
@@ -36,10 +47,6 @@ private:
     Simulation *igenNemTwo;
     Simulation *schulzeOne;
     Simulation *schulzeTwo;
-
-    // number of voters and number of candidates fields
-    int numVoters;
-    int numCandidates;
 };
 
 #endif // SIMULATIONWORKER_H

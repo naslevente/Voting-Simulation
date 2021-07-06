@@ -29,6 +29,8 @@ public:
 private slots:
    void on_stop_button_clicked();
 
+   void on_finish_button_clicked();
+
 public slots:
     void StartProcess();
     void UpdateIterationLabel(int);
@@ -49,6 +51,7 @@ private:
 
     // mainwindow gui elements
     QPushButton *startButton;
+    QPushButton *finishButton;
     QLabel *iterationLabel;
     QTextEdit *votersInput;
     QTextEdit *candidatesInput;
@@ -56,6 +59,9 @@ private:
 
     // method to setup ui elements
     void SetupApplication();
+
+    // method to update table widget
+    void UpdateTableWidget(std::vector<std::vector<double>>);
 
 };
 #endif // MAINWINDOW_H

@@ -47,10 +47,20 @@ SimulationWorker::~SimulationWorker() {
     delete schulzeTwo;
 }
 
-void SimulationWorker::Simulate() {
+std::vector<std::vector<double>> SimulationWorker::getProbabilities() {
 
-    // iteration counter for iteration label
-    int iterations = 0;
+    std::vector<std::vector<double>> probabilities = std::vector<std::vector<double>>();
+
+    // get all individual probabilites from each simulation
+    probabilities.push_back(igenNemOne->getProbabilities(iterations));
+    probabilities.push_back(igenNemTwo->getProbabilities(iterations));
+    probabilities.push_back(schulzeOne->getProbabilities(iterations));
+    probabilities.push_back(schulzeTwo->getProbabilities(iterations));
+
+    return probabilities;
+}
+
+void SimulationWorker::Simulate() {
 
     // while the stop button hasn't been pressed
     while(isRunning) {

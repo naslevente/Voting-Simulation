@@ -1,8 +1,10 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <vector>
+#include <QTableWidget>
 #include "Ballot.h"
 #include "Graph.h"
 #include "GraphController.h"
@@ -21,11 +23,13 @@ class Simulation {
         bool isSchulze;
 
         // necessary variables for analysis
-        int numberOfManipulations;
+        long double numberOfManipulations;
         int numberOfSuccesses;
         int minoritySuccesses; // only for schulze
 
         Simulation(int numVoters, int numCandidates) {
+
+            srand(time(0));
 
             this->numCandidates = numCandidates;
             this->numVoters = numVoters;
@@ -41,6 +45,17 @@ class Simulation {
         }
 
         ~Simulation() = default;
+
+        // create 1d array of probailities and attach to 2d array of all probabilities
+        std::vector<double> getProbabilities(int iterations) {
+
+            std::vector<double> probabilities = std::vector<double>();
+            probabilities.push_back((long double)(this->numberOfManipulations / iterations));
+            probabilities.push_back((long double)(this->numberOfSuccesses / (long double)(iterations)));
+            probabilities.push_back((double)(this->minoritySuccesses / iterations));
+
+            return probabilities;
+        }
 
         // getters and setters
         int getNumberOfManipulations() {
@@ -128,13 +143,25 @@ class Simulation {
 
                     if(igenNemCount.at(i) >= (int)(numVoters / 2)) {
 
-                        if(igenNemCount.at(i) > firstWinningCandidate) {
+                        if(firstWinningCandidate == -1) {
 
-                            firstWinningCandidate = igenNemCount.at(i);
+                            firstWinningCandidate = i;
                         }
-                        else if(igenNemCount.at(i) > secondWinningCandidate) {
+                        else if(secondWinningCandidate == -1) {
 
-                            secondWinningCandidate = igenNemCount.at(i);
+                            secondWinningCandidate = i;
+                        }
+                        else {
+
+                            if(igenNemCount.at(i) > igenNemCount.at(firstWinningCandidate)) {
+
+                                secondWinningCandidate = firstWinningCandidate;
+                                firstWinningCandidate = i;
+                            }
+                            else if(igenNemCount.at(i) > igenNemCount.at(secondWinningCandidate)) {
+
+                                secondWinningCandidate = i;
+                            }
                         }
                     }
                 }
@@ -225,20 +252,30 @@ class Simulation {
         // same manipulations for each simulation
         void Manipulation(int winningCandidateOne, int winningCandidateTwo) {
 
+            int manipulations = 0;
             for(int i = 0; i < numVoters; ++i) {
 
                 std::shared_ptr<Ballot> currentVoter = simulationBallots.at(i);
+                bool hasManipulated = false;
                 for(int j = 0; j < numCandidates; ++j) {
 
                     // R(k - 1) iteracio szerint elokelobb helyen vegzett, de a szavazo sajat rangsoraban hatrebb sorolt szituacio
                     if((j == winningCandidateOne || j == winningCandidateTwo) &&
-                        currentVoter->ballot.at(j) != 1 && currentVoter->ballot.at(j) != 2) {
+                        currentVoter->ballot.at(j) != 1 && currentVoter->ballot.at(j) != 2 && currentVoter->ballot.at(j) != 0) {
 
                         currentVoter->ballot.at(j) = 0;
-                        numberOfManipulations += 1;
+
+                        if(!hasManipulated) {
+
+                            manipulations += 1;
+                            hasManipulated = true;
+                        }
                     }
                 }
             }
+
+            // add up probability from each simulation and average after each iteration
+            numberOfManipulations += (long double)(manipulations / (long double)(numVoters));
         }
 
     private:
