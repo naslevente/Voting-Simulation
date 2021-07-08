@@ -31,7 +31,7 @@ class Ballot {
                 }
 
                 int nextRandNumber = rand() % 2;
-                if(nextRandNumber || (isOne && isSchulze)) { // elso schulze eljarasban mindegyik kandidatus kap egy szavazatot
+                if(nextRandNumber || (isOne && isSchulze)) { // elso schulze eljarasban mindegyik jelolt kap egy szavazatot
 
                     ballot.at(randomIndex) = startingRank;
                     startingRank += step;

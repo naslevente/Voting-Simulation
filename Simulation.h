@@ -19,6 +19,7 @@ class Simulation {
     public:
 
         std::vector<int> igenNemCount;
+        std::vector<int> minorityCount;
         bool isOne;
         bool isSchulze;
 
@@ -50,9 +51,9 @@ class Simulation {
         std::vector<double> getProbabilities(int iterations) {
 
             std::vector<double> probabilities = std::vector<double>();
-            probabilities.push_back((long double)(this->numberOfManipulations / iterations));
-            probabilities.push_back((long double)(this->numberOfSuccesses / (long double)(iterations)));
-            probabilities.push_back((double)(this->minoritySuccesses / iterations));
+            probabilities.push_back((long double)((this->numberOfManipulations / iterations) * 100));
+            probabilities.push_back((long double)((this->numberOfSuccesses / (long double)(iterations)) * 100));
+            probabilities.push_back((long double)((this->minoritySuccesses / (long double)(iterations)) * 100));
 
             return probabilities;
         }
@@ -90,13 +91,31 @@ class Simulation {
             // calculate strongest paths
             auto finalRank = FindWinningSchulzeCandidates();
 
-            if(finalRank.at(0) != -1 || finalRank.at(1) != -1) {
+            bool isSuccess = false;
+            if(finalRank.at(0) != -1 && finalRank.at(1) != -1) {
 
                 numberOfSuccesses += 1;
+                isSuccess = true;
             }
 
             // manipulate the current ballots and rerun the simulation
             Manipulation(finalRank.at(0), finalRank.at(1));
+
+            // calculate minorty probability
+            int max = 0;
+            for(int i = 0; i < minorityCount.size(); ++i) {
+
+                max = std::max(minorityCount.at(i), max);
+            }
+
+            // check if first or second place winner was a minority count leader
+            if(isSuccess && (minorityCount.at(finalRank.at(0)) == max || minorityCount.at(finalRank.at(1)) == max) && max != 0) {
+
+                minoritySuccesses += 1;
+            }
+
+            // reset minority count vector
+            minorityCount = std::vector<int>(numCandidates, -1);
         }
 
         void GenerateRandomBallots() {
@@ -137,11 +156,11 @@ class Simulation {
 
             if(isOne) {
 
-                // find the winning candidates
-                // TODO: make a case for ties
+                // find the winning candidates by looping through the number of voters
+                // that voted for a certain candidate and determining candidate with most votes
                 for(int i = 0; i < igenNemCount.size(); ++i) {
 
-                    if(igenNemCount.at(i) >= (int)(numVoters / 2)) {
+                    if(igenNemCount.at(i) >= (int)(numVoters / 2) || !isOne) {
 
                         if(firstWinningCandidate == -1) {
 
@@ -153,6 +172,10 @@ class Simulation {
                         }
                         else {
 
+                            // change random number generator seed and generate either 0 or 1
+                            srand(time(0));
+                            int random = rand() % 2;
+
                             if(igenNemCount.at(i) > igenNemCount.at(firstWinningCandidate)) {
 
                                 secondWinningCandidate = firstWinningCandidate;
@@ -161,6 +184,25 @@ class Simulation {
                             else if(igenNemCount.at(i) > igenNemCount.at(secondWinningCandidate)) {
 
                                 secondWinningCandidate = i;
+                            }
+                            else if(igenNemCount.at(i) == igenNemCount.at(firstWinningCandidate)) {
+
+                                if(random) {
+
+                                    secondWinningCandidate = firstWinningCandidate;
+                                    firstWinningCandidate = i;
+                                }
+                                else {
+
+                                    secondWinningCandidate = i;
+                                }
+                            }
+                            else if(igenNemCount.at(i) == igenNemCount.at(secondWinningCandidate)) {
+
+                                if(random) {
+
+                                    secondWinningCandidate = i;
+                                }
                             }
                         }
                     }
@@ -190,18 +232,33 @@ class Simulation {
 
         void CountPreferances() {
 
+            // initialize vector that will count minority
+            minorityCount = std::vector<int>(numCandidates, -1);
+
             // this method loops through the candidates and calculates the number of voters who
             // prefer a certain candidate over another
             for(int i = 0; i < numCandidates; ++i) {
 
-                int currentCandidate = i;
+                // count minority votes for each candidate
+                int elfogadSzam = 0;
+                for(int j = 0; j < numVoters; ++j) {
+
+                    if(simulationBallots.at(j)->ballot.at(i) == 0) {
+
+                        elfogadSzam += 1;
+                    }
+                }
+
+                // update minority count vector
+                minorityCount.at(i) = elfogadSzam;
+
                 for(int j = i + 1; j < numCandidates; ++j) {
 
                     int iPreferance = 0;
                     int jPreferance = 0;
                     for(int k = 0; k < numVoters; ++k) {
 
-                        // currently ignoring special case with same ranks
+                        // TODO: consider a voter using same rank on two different candidates
                         if(simulationBallots.at(k)->ballot.at(i) < simulationBallots.at(k)->ballot.at(j)) {
 
                             ++iPreferance;
