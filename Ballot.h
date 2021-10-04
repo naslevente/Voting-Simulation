@@ -16,7 +16,7 @@ class Ballot {
 
         std::vector<int> ballot;
 
-        Ballot(int numCandidates, bool isOne, bool isSchulze) {
+        Ballot(int numCandidates, bool isGettingFullBallot) {
 
             int startingRank = 1;
             int step = 1;
@@ -31,7 +31,7 @@ class Ballot {
                 }
 
                 int nextRandNumber = rand() % 2;
-                if(nextRandNumber || (isOne && isSchulze)) { // elso schulze eljarasban mindegyik jelolt kap egy szavazatot
+                if((nextRandNumber == 1) || (isGettingFullBallot)) { // elso schulze eljarasban mindegyik jelolt kap egy szavazatot
 
                     ballot.at(randomIndex) = startingRank;
                     startingRank += step;

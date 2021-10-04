@@ -16,8 +16,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    basesimulation.cpp \
+    igennemsimulation.cpp \
     main.cpp \
     mainwindow.cpp \
+    schulzesimmulation.cpp \
     simulationworker.cpp
 
 HEADERS += \
@@ -26,7 +29,10 @@ HEADERS += \
     GraphController.h \
     Simulation.h \
     WeightedLink.h \
+    basesimulation.h \
+    igennemsimulation.h \
     mainwindow.h \
+    schulzesimmulation.h \
     simulationworker.h
 
 FORMS += \

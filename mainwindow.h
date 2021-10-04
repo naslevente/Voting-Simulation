@@ -28,12 +28,28 @@ public:
 
 private slots:
    void on_stop_button_clicked();
-
    void on_finish_button_clicked();
+
+   // slot to invoke update of probability table
+   void UpdateProbabilityTable();
+
+   // slot to start new simulations until probability numbers start to converge
+   void StartSimulationIterations();
+
+   // slot to continue running new simulations while probability numbers converge
+   void ContinueSimulationIterations();
 
 public slots:
     void StartProcess();
     void UpdateIterationLabel(int);
+
+signals:
+
+    // signal to deal with cleanup after probability numbers have converged
+    void CleanupMainThread();
+
+    // signal to begin simulation
+    void BeginSimulation();
 
 private:
     Ui::MainWindow *ui;
@@ -42,12 +58,18 @@ private:
     QThread *mainThread;
     SimulationWorker *worker;
 
-    // private methods
-    void UpdateProbabilityTable(int);
+    // private boolean fields
+    bool isConverged = false;
 
-    // number of candidates and number of voters fields
+    // !! private methods
+
+    // number of candidates, number of voters, and number of iterations fields
     int numCandidates;
     int numVoters;
+    int numberOfIterations;
+
+    // boolean variable to indicate whether or not probability numbers have converged
+    int isConvereged;
 
     // mainwindow gui elements
     QPushButton *startButton;
@@ -60,7 +82,7 @@ private:
     // method to setup ui elements
     void SetupApplication();
 
-    // method to update table widget
+    // method to update probability table
     void UpdateTableWidget(std::vector<std::vector<double>>);
 
 };

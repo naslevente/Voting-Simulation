@@ -18,15 +18,23 @@ class Simulation {
 
     public:
 
-        std::vector<int> igenNemCount;
+        std::vector<int> voteCount;
         std::vector<int> minorityCount;
-        bool isOne;
+
         bool isSchulze;
+        bool isOne;
+        bool isGettingFullBallot;
+        bool isDone = false;
 
         // necessary variables for analysis
         long double numberOfManipulations;
         int numberOfSuccesses;
         int minoritySuccesses; // only for schulze
+        int manipulationCount = -1;
+        int numberOfIterations = 0;
+
+        // winning candidates
+        std::tuple<int, int> finalCandidates;
 
         Simulation(int numVoters, int numCandidates) {
 
@@ -48,17 +56,17 @@ class Simulation {
         ~Simulation() = default;
 
         // create 1d array of probailities and attach to 2d array of all probabilities
-        std::vector<double> getProbabilities(int iterations) {
+        std::vector<double> getProbabilities() {
 
             std::vector<double> probabilities = std::vector<double>();
-            probabilities.push_back((long double)((this->numberOfManipulations / iterations) * 100));
-            probabilities.push_back((long double)((this->numberOfSuccesses / (long double)(iterations)) * 100));
-            probabilities.push_back((long double)((this->minoritySuccesses / (long double)(iterations)) * 100));
+            probabilities.push_back((long double)((this->numberOfManipulations / (long double)(numberOfIterations)) * 100));
+            probabilities.push_back((long double)((this->numberOfSuccesses / (long double)(numberOfIterations)) * 100));
+            probabilities.push_back((long double)((this->minoritySuccesses / (long double)(numberOfIterations)) * 100));
 
             return probabilities;
         }
 
-        // getters and setters
+        // getters
         int getNumberOfManipulations() {
 
             return this->numberOfManipulations;
@@ -68,8 +76,12 @@ class Simulation {
 
         void StartIgenNemSimulation() {
 
+            manipulationCount = 0;
+
             // count ballots
-            auto winningCandidates = IgenNemCount(igenNemCount);
+            CountVotes();
+            auto winningCandidates = DetermineWinners();
+            finalCandidates = winningCandidates;
 
             if(std::get<0>(winningCandidates) != -1 && std::get<1>(winningCandidates) != -1) {
 
@@ -80,58 +92,85 @@ class Simulation {
             Manipulation(std::get<0>(winningCandidates), std::get<1>(winningCandidates));
 
             // clear the count array
-            igenNemCount = std::vector<int>(numCandidates, 0);
+            voteCount = std::vector<int>(numCandidates, 0);
+
+            // increment iteration counter
+            ++numberOfIterations;
         }
 
         void StartSchulzeSimulation() {
 
+            manipulationCount = 0;
+
             // count the ballots
             CountPreferances();
+            CountVotes();
 
             // calculate strongest paths
             auto finalRank = FindWinningSchulzeCandidates();
 
+            std::get<0>(finalCandidates) = finalRank.at(0);
+            std::get<1>(finalCandidates) = finalRank.at(1);
+
             bool isSuccess = false;
             if(finalRank.at(0) != -1 && finalRank.at(1) != -1) {
 
-                numberOfSuccesses += 1;
-                isSuccess = true;
+                if(!isGettingFullBallot) {
+
+                    if(voteCount.at(finalRank.at(0)) > int(numVoters / 2) && voteCount.at(finalRank.at(1) > int(numVoters / 2))) {
+
+                        numberOfSuccesses += 1;
+                        isSuccess = true;
+                    }
+                }
+                else {
+
+                    numberOfSuccesses += 1;
+                    isSuccess = true;
+                }
             }
 
             // manipulate the current ballots and rerun the simulation
             Manipulation(finalRank.at(0), finalRank.at(1));
 
-            // calculate minorty probability
-            int max = 0;
+            // !! calculate minorty probability
             for(int i = 0; i < minorityCount.size(); ++i) {
 
-                max = std::max(minorityCount.at(i), max);
+                if(minorityCount.at(i) < (int)(numVoters / 2)) {
+
+                    minorityCount.at(i) = -1;
+                }
             }
 
             // check if first or second place winner was a minority count leader
-            if(isSuccess && (minorityCount.at(finalRank.at(0)) == max || minorityCount.at(finalRank.at(1)) == max) && max != 0) {
+            if(isSuccess && (minorityCount.at(finalRank.at(0)) >= int(numVoters / 2) || minorityCount.at(finalRank.at(1)) >= int(numVoters / 2))) {
 
                 minoritySuccesses += 1;
             }
 
             // reset minority count vector
             minorityCount = std::vector<int>(numCandidates, -1);
+            ++numberOfIterations;
         }
 
         void GenerateRandomBallots() {
 
+            std::cout << "printing out ballots: " << std::endl;
             for(int i = 0; i < numVoters; ++i) {
 
-                std::shared_ptr<Ballot> newBallot = std::make_shared<Ballot>(numCandidates, isOne, isSchulze);
+                std::shared_ptr<Ballot> newBallot = std::make_shared<Ballot>(numCandidates, isGettingFullBallot);
                 simulationBallots.at(i) = newBallot;
+
+                for(int j = 0; j < numCandidates; ++j) {
+
+                    std::cout << simulationBallots.at(i)->ballot.at(j) << " ";
+                }
+                std::cout << std::endl;
             }
         }
 
         // two candidates in the tuple are the winning candidate (-1 if there are none in the majority scenario)
-        std::tuple<int, int> IgenNemCount(std::vector<int> &igenNemCount) {
-
-            int firstWinningCandidate = 0;
-            int secondWinningCandidate = 0;
+        void CountVotes() {
 
             // count the votes
             for(int i = 0; i < numVoters; ++i) {
@@ -140,13 +179,10 @@ class Simulation {
 
                     if(simulationBallots.at(i)->ballot.at(j) != 0) {
 
-                        igenNemCount.at(j) += 1;
+                        voteCount.at(j) += 1;
                     }
                 }
             }
-
-            auto winningCandidates = DetermineWinners();
-            return winningCandidates;
         }
 
         std::tuple<int, int> DetermineWinners() {
@@ -154,80 +190,78 @@ class Simulation {
             int firstWinningCandidate = -1;
             int secondWinningCandidate = -1;
 
-            if(isOne) {
+            // find the winning candidates by looping through the number of voters
+            // that voted for a certain candidate and determining candidate with most votes
+            for(int i = 0; i < voteCount.size(); ++i) {
 
-                // find the winning candidates by looping through the number of voters
-                // that voted for a certain candidate and determining candidate with most votes
-                for(int i = 0; i < igenNemCount.size(); ++i) {
+                if(voteCount.at(i) >= (int)(numVoters / 2) || !isOne) {
 
-                    if(igenNemCount.at(i) >= (int)(numVoters / 2) || !isOne) {
+                    if(firstWinningCandidate == -1) {
 
-                        if(firstWinningCandidate == -1) {
+                        firstWinningCandidate = i;
+                    }
+                    else if(secondWinningCandidate == -1) {
 
+                        secondWinningCandidate = i;
+                    }
+                    else {
+
+                        // holtverseny eseten egy random szam alapitja meg a nyertest
+                        int random = rand() % 2;
+
+                        if(voteCount.at(i) > voteCount.at(firstWinningCandidate)) {
+
+                            secondWinningCandidate = firstWinningCandidate;
                             firstWinningCandidate = i;
                         }
-                        else if(secondWinningCandidate == -1) {
+                        else if(voteCount.at(i) > voteCount.at(secondWinningCandidate)) {
 
                             secondWinningCandidate = i;
                         }
-                        else {
+                        else if(voteCount.at(i) == voteCount.at(firstWinningCandidate)) {
 
-                            // change random number generator seed and generate either 0 or 1
-                            srand(time(0));
-                            int random = rand() % 2;
-
-                            if(igenNemCount.at(i) > igenNemCount.at(firstWinningCandidate)) {
+                            if(random) {
 
                                 secondWinningCandidate = firstWinningCandidate;
                                 firstWinningCandidate = i;
                             }
-                            else if(igenNemCount.at(i) > igenNemCount.at(secondWinningCandidate)) {
+                            else {
 
                                 secondWinningCandidate = i;
                             }
-                            else if(igenNemCount.at(i) == igenNemCount.at(firstWinningCandidate)) {
+                        }
+                        else if(voteCount.at(i) == voteCount.at(secondWinningCandidate)) {
 
-                                if(random) {
+                            if(random) {
 
-                                    secondWinningCandidate = firstWinningCandidate;
-                                    firstWinningCandidate = i;
-                                }
-                                else {
-
-                                    secondWinningCandidate = i;
-                                }
-                            }
-                            else if(igenNemCount.at(i) == igenNemCount.at(secondWinningCandidate)) {
-
-                                if(random) {
-
-                                    secondWinningCandidate = i;
-                                }
+                                secondWinningCandidate = i;
                             }
                         }
                     }
                 }
-
-                auto winningCandidates = std::make_tuple(firstWinningCandidate, secondWinningCandidate);
-                return winningCandidates;
             }
+
+            auto winningCandidates = std::make_tuple(firstWinningCandidate, secondWinningCandidate);
+            return winningCandidates;
+            /*
             else {
 
-                for(int i = 0; i < igenNemCount.size(); ++i) {
+                for(int i = 0; i < voteCount.size(); ++i) {
 
-                    if(igenNemCount.at(i) > firstWinningCandidate) {
+                    if(voteCount.at(i) > firstWinningCandidate) {
 
-                        firstWinningCandidate = igenNemCount.at(i);
+                        firstWinningCandidate = voteCount.at(i);
                     }
-                    else if(igenNemCount.at(i) > secondWinningCandidate) {
+                    else if(voteCount.at(i) > secondWinningCandidate) {
 
-                        secondWinningCandidate = igenNemCount.at(i);
+                        secondWinningCandidate = voteCount.at(i);
                     }
                 }
 
                 auto winningCandidates = std::make_tuple(firstWinningCandidate, secondWinningCandidate);
                 return winningCandidates;
             }
+            */
         }
 
         void CountPreferances() {
@@ -240,17 +274,17 @@ class Simulation {
             for(int i = 0; i < numCandidates; ++i) {
 
                 // count minority votes for each candidate
-                int elfogadSzam = 0;
+                int elfogadhatatlanSzam = 0;
                 for(int j = 0; j < numVoters; ++j) {
 
                     if(simulationBallots.at(j)->ballot.at(i) == 0) {
 
-                        elfogadSzam += 1;
+                        elfogadhatatlanSzam += 1;
                     }
                 }
 
                 // update minority count vector
-                minorityCount.at(i) = elfogadSzam;
+                minorityCount.at(i) = elfogadhatatlanSzam;
 
                 for(int j = i + 1; j < numCandidates; ++j) {
 
@@ -261,11 +295,25 @@ class Simulation {
                         // TODO: consider a voter using same rank on two different candidates
                         if(simulationBallots.at(k)->ballot.at(i) < simulationBallots.at(k)->ballot.at(j)) {
 
-                            ++iPreferance;
-                        }
-                        else {
+                            if(simulationBallots.at(k)->ballot.at(i) == 0) {
 
-                            ++jPreferance;
+                                ++jPreferance;
+                            }
+                            else {
+
+                                ++iPreferance;
+                            }
+                        }
+                        else if(simulationBallots.at(k)->ballot.at(j) < simulationBallots.at(k)->ballot.at(i)){
+
+                            if(simulationBallots.at(k)->ballot.at(j) == 0) {
+
+                                ++iPreferance;
+                            }
+                            else {
+
+                                ++jPreferance;
+                            }
                         }
                     }
 
@@ -297,10 +345,34 @@ class Simulation {
                     }
                 }
 
-                // refer to wikipedia table with strong paths
                 // count the number of wins a certain row number has over its column associates
                 // that number minus the number of candidates gives the ranking for that row candidate
                 finalRank.at((numCandidates - 1) - numGreater) = i;
+                /*
+                int index = (numCandidates - 1) - numGreater;
+                if(finalRank.at(index) == -1) {
+
+                    finalRank.at(index) = i;
+                }
+                else { // else is considered for ties
+
+                    srand(time(0));
+                    int random = rand() % 2;
+                    if(finalRank.at(index - 1) == -1) {
+
+                        if(random) finalRank.at(index - 1) = i;
+                        else {
+
+                            finalRank.at(index - 1) = std::move(finalRank.at(index));
+                            finalRank.at(index) = i;
+                        }
+                    }
+                    else {
+
+                        int rank = finalRank.at(index);
+                    }
+                }
+                */
             }
 
             return finalRank;
@@ -332,7 +404,20 @@ class Simulation {
             }
 
             // add up probability from each simulation and average after each iteration
+            manipulationCount = manipulations;
             numberOfManipulations += (long double)(manipulations / (long double)(numVoters));
+        }
+
+        void PrintBallots() {
+
+            for(int i = 0; i < numVoters; ++i) {
+
+                for(int j = 0; j < numCandidates; ++j) {
+
+                    std::cout << simulationBallots.at(i)->ballot.at(j) << " ";
+                }
+                std::cout << std::endl;
+            }
         }
 
     private:
